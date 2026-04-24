@@ -12,14 +12,14 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - name: Prepare static site
@@ -28,9 +28,8 @@ jobs:
           cp index.html _site/
           cp .nojekyll _site/
           cp -r assets tools _site/
-      - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
-      - uses: actions/deploy-pages@v4
-        id: deploy
+      - uses: actions/deploy-pages@v5
+        id: deployment
