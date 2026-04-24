@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>De-stringify JSON — Prompt engineering tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <p class="site-title"><a href="../">Prompt engineering tools</a></p>
+        <nav class="nav-tools" aria-label="Tools">
+          <a href="./de-stringify-json.html" aria-current="page">De-stringify JSON</a>
+        </nav>
+      </div>
+    </header>
+    <main class="tool-page">
+      <h1>De-stringify JSON</h1>
+      <p class="lede">
+        Paste JSON that contains another JSON document as an escaped string (sometimes
+        repeatedly). This tool parses until it reaches a real object or array, then
+        pretty-prints the result.
+      </p>
+      <div class="toolbar">
+        <button type="button" id="run">De-stringify</button>
+        <button type="button" id="copy" class="secondary">Copy output</button>
+        <button type="button" id="swap" class="secondary">Swap in / out</button>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <label for="input">Input</label>
+          <textarea
+            id="input"
+            spellcheck="false"
+            placeholder='e.g. "{\"a\":1}" or "\"{\\\"x\\\":2}\""'
+          ></textarea>
+        </div>
+        <div class="panel">
+          <label for="output">Output</label>
+          <textarea id="output" readonly spellcheck="false" aria-live="polite"></textarea>
+        </div>
+      </div>
+      <p id="status" class="status" role="status"></p>
+      <div class="hint">
+        <strong style="color: var(--text)">How it works:</strong>
+        <code>JSON.parse</code> is applied to your text, then again on the result while
+        the value is still a string (with a safety cap on depth). If the final value is
+        not a string, it is formatted with <code>JSON.stringify(..., null, 2)</code>.
+      </div>
+    </main>
+    <script src="../assets/de-stringify-json.js" type="module"></script>
+  </body>
+</html>

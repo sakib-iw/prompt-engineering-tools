@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prompt engineering tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <p class="site-title"><a href="./">Prompt engineering tools</a></p>
+        <nav class="nav-tools" aria-label="Tools">
+          <a href="tools/de-stringify-json.html">De-stringify JSON</a>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div class="hero">
+        <h1>Small static tools</h1>
+        <p>
+          Helpers for working with prompts, logs, and model output. Runs in the
+          browser only; nothing is sent to a server.
+        </p>
+      </div>
+      <ul class="tool-list">
+        <li>
+          <a class="tool-card" href="tools/de-stringify-json.html">
+            <strong>De-stringify JSON</strong>
+            <span
+              >Unwrap JSON that was encoded as a string once or many times (API
+              logs, escaped payloads).</span
+            >
+          </a>
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>
