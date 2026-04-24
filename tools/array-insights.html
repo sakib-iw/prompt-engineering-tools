@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Number array insights — Prompt engineering tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <p class="site-title"><a href="../">Prompt engineering tools</a></p>
+        <nav class="nav-tools" aria-label="Tools">
+          <a href="./de-stringify-json.html">De-stringify JSON</a>
+          <a href="./array-insights.html" aria-current="page">Array insights</a>
+          <a href="./json-outputs-compare.html">JSON compare</a>
+        </nav>
+      </div>
+    </header>
+    <main class="tool-page">
+      <h1>Number array insights</h1>
+      <p class="lede">
+        Paste a JSON array of numbers (model output, shuffled IDs, lottery-style lists). Get
+        counts, min/max, sum, mean, median, monotonicity, sorted lists, duplicate indices,
+        index↔value table, gaps in an integer range, and consecutive runs — plus a
+        copyable plain-text report for prompts.
+      </p>
+      <div class="toolbar">
+        <button type="button" id="run">Analyze</button>
+        <button type="button" id="copy" class="secondary">Copy text report</button>
+      </div>
+      <div class="panel" style="margin-bottom: 1rem">
+        <label for="input">JSON number array</label>
+        <textarea
+          id="input"
+          spellcheck="false"
+          placeholder="[1, 2, 3, 2]"
+          rows="8"
+        ></textarea>
+      </div>
+      <div class="range-row">
+        <div class="field-inline">
+          <label for="rangeFrom">Range from (optional)</label>
+          <input type="number" id="rangeFrom" step="1" placeholder="auto = min" />
+        </div>
+        <div class="field-inline">
+          <label for="rangeTo">Range to (optional)</label>
+          <input type="number" id="rangeTo" step="1" placeholder="auto = max" />
+        </div>
+      </div>
+      <p class="field-hint">
+        Leave both range fields empty to find missing integers between the array’s minimum
+        and maximum. Set both to scan a fixed band (e.g. 1–52).
+      </p>
+      <p id="status" class="status" role="status"></p>
+      <div id="report" class="report" hidden></div>
+      <div class="hint">
+        <strong style="color: var(--text)">Input rules:</strong> valid JSON only — square
+        brackets, comma-separated numbers. Missing integers use each whole number
+        <code>k</code> in the chosen range and check whether <code>k</code> appears
+        exactly in the array. Consecutive runs need all values to be integers.
+      </div>
+    </main>
+    <script src="../assets/array-insights.js" type="module"></script>
+  </body>
+</html>

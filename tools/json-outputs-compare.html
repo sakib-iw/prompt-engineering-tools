@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Multi-output JSON compare — Prompt engineering tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <p class="site-title"><a href="../">Prompt engineering tools</a></p>
+        <nav class="nav-tools" aria-label="Tools">
+          <a href="./de-stringify-json.html">De-stringify JSON</a>
+          <a href="./array-insights.html">Array insights</a>
+          <a href="./json-outputs-compare.html" aria-current="page">JSON compare</a>
+        </nav>
+      </div>
+    </header>
+    <main class="tool-page tool-page--wide">
+      <h1>Multi-output JSON compare</h1>
+      <p class="lede">
+        Paste several JSON documents from repeated model runs. Pick a reference output for
+        shape matching, optionally paste a JSON Schema to validate each document, then
+        inspect structural issues and a side-by-side value matrix for every leaf path.
+      </p>
+
+      <div class="compare-controls">
+        <div class="field-inline compare-field">
+          <label for="reference">Reference output</label>
+          <select id="reference" aria-describedby="ref-hint"></select>
+        </div>
+        <div class="field-inline compare-field">
+          <label for="highlightMode">Highlight matrix cells</label>
+          <select id="highlightMode">
+            <option value="ref">Different from reference</option>
+            <option value="row">Different from output 1 in row</option>
+          </select>
+        </div>
+        <div class="checkbox-inline">
+          <input type="checkbox" id="filterDiff" checked />
+          <label for="filterDiff">Matrix: only paths that differ</label>
+        </div>
+        <div class="field-inline compare-field compare-field--grow">
+          <label for="pathFilter">Path contains (optional)</label>
+          <input type="text" id="pathFilter" placeholder="e.g. choices[0]" autocomplete="off" />
+        </div>
+      </div>
+      <p id="ref-hint" class="field-hint" style="margin-top: 0">
+        Every output slot must contain valid JSON. Remove extra slots you are not using.
+        Structural checks compare each output to the reference (keys, array lengths, types).
+      </p>
+
+      <div class="toolbar">
+        <button type="button" id="run">Compare</button>
+        <button type="button" id="copy" class="secondary">Copy summary</button>
+        <button type="button" id="add-output" class="secondary">Add output slot</button>
+      </div>
+
+      <div class="panel" style="margin-bottom: 1rem">
+        <label for="schema">JSON Schema (optional)</label>
+        <textarea id="schema" spellcheck="false" rows="6" placeholder='{ "type": "object", "required": ["answer"], ... }'></textarea>
+      </div>
+
+      <div id="output-list" class="output-list"></div>
+
+      <p id="status" class="status" role="status"></p>
+      <div id="report" class="report" hidden></div>
+
+      <div class="hint">
+        <strong style="color: var(--text)">Schema validation</strong> loads
+        <a href="https://ajv.js.org/">Ajv</a> from a CDN when you run Compare (requires
+        network once). If it fails, structural + matrix views still work. Schema uses
+        standard JSON Schema keywords (<code>type</code>, <code>required</code>,
+        <code>properties</code>, etc.).
+      </div>
+    </main>
+    <script src="../assets/json-outputs-compare.js" type="module"></script>
+  </body>
+</html>
