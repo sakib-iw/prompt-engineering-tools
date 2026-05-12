@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JSON viewer — Prompt engineering tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <p class="site-title"><a href="../">Prompt engineering tools</a></p>
+        <nav class="nav-tools" aria-label="Tools">
+          <a href="./de-stringify-json.html">De-stringify JSON</a>
+          <a href="./array-insights.html">Array insights</a>
+          <a href="./json-outputs-compare.html">JSON compare</a>
+          <a href="./json-viewer.html" aria-current="page">JSON viewer</a>
+        </nav>
+      </div>
+    </header>
+    <main class="tool-page tool-page--wide">
+      <h1>JSON viewer</h1>
+      <p class="lede">
+        Paste JSON and inspect it as a collapsible tree. You can pretty-format,
+        minify, validate, expand/collapse all, and quickly copy normalized output.
+      </p>
+      <div class="toolbar">
+        <button type="button" id="validate">Validate</button>
+        <button type="button" id="format" class="secondary">Pretty format</button>
+        <button type="button" id="minify" class="secondary">Minify</button>
+        <button type="button" id="expand" class="secondary">Expand all</button>
+        <button type="button" id="collapse" class="secondary">Collapse all</button>
+        <button type="button" id="fullscreen" class="secondary">Full screen tree</button>
+        <button type="button" id="copy" class="secondary">Copy output</button>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <label for="input">JSON input</label>
+          <textarea
+            id="input"
+            spellcheck="false"
+            placeholder='{ "message": "hello", "items": [1, 2, 3] }'
+          ></textarea>
+        </div>
+        <div class="panel">
+          <label for="normalized">Normalized output</label>
+          <textarea id="normalized" readonly spellcheck="false"></textarea>
+        </div>
+      </div>
+      <p id="status" class="status" role="status"></p>
+      <section class="report-block viewer-block" id="tree-panel">
+        <h2>Tree view</h2>
+        <div id="tree" class="json-tree" aria-live="polite"></div>
+      </section>
+    </main>
+    <script src="../assets/json-viewer.js" type="module"></script>
+  </body>
+</html>
