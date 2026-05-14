@@ -316,7 +316,7 @@ Key Insight: Paragraphs starting with this phrase render as a callout box."></te
         <li><b>Code blocks</b> — gray shaded, Consolas 9pt</li>
         <li><b>Horizontal rules</b> <code>---</code> — thin gray line</li>
         <li><b>Callouts</b> — paragraphs starting with <code>Key Insight:</code>, <code>Most Significant Change:</code>, or <code>The Single Most Important Thing You Should Do</code> render as light-blue callout boxes</li>
-        <li><b>Mermaid blocks</b> ` ` `mermaid… ` ` ` — render as an orange placeholder box (full rendering not included to keep the tool self-contained)</li>
+        <li><b>Mermaid blocks</b> ` ` `mermaid&hellip; ` ` ` — rendered as PNG diagrams using brand-themed colors (loads mermaid.js from a CDN on first use; falls back to an orange placeholder if offline or if the source has syntax errors)</li>
       </ul>
       <p style="margin-top: 12px;">Everything runs locally in your browser — no upload, no server, no internet required after the page loads.</p>
     </div>
@@ -23635,7 +23635,7 @@ function renderParagraph(tok) {
     ];
   }
   return [new D.Paragraph({
-    alignment: D.AlignmentType.JUSTIFIED,
+    alignment: D.AlignmentType.LEFT,
     spacing: { before: 60, after: 60, line: 280 },
     children: inline(tok.tokens),
   })];
@@ -23670,7 +23670,7 @@ function renderList(tok, level) {
         else childBlocks.push(new D.Paragraph({
           spacing: { before: 40, after: 40, line: 260 },
           indent: { left: (level + 1) * 504 + 504 },
-          alignment: D.AlignmentType.JUSTIFIED,
+          alignment: D.AlignmentType.LEFT,
           children: inline(t.tokens),
         }));
       } else if (t.type === "paragraph") {
@@ -23678,7 +23678,7 @@ function renderList(tok, level) {
         else childBlocks.push(new D.Paragraph({
           spacing: { before: 40, after: 40, line: 260 },
           indent: { left: (level + 1) * 504 + 504 },
-          alignment: D.AlignmentType.JUSTIFIED,
+          alignment: D.AlignmentType.LEFT,
           children: inline(t.tokens),
         }));
       } else if (t.type === "list") {
@@ -23868,8 +23868,149 @@ function loadLogo() {
   }
 }
 
+// ---------- Mermaid rendering ----------
+// Loads mermaid.js lazily from a CDN the first time a mermaid block is seen.
+// Renders each block to SVG, converts to PNG via canvas, and embeds inline.
+// If anything fails (network, parse error, etc.) we fall back to the
+// orange placeholder so the conversion never breaks.
+const MERMAID_CDN = "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js";
+let _mermaidPromise = null;
+
+function loadMermaid() {
+  if (window.mermaid) return Promise.resolve(window.mermaid);
+  if (_mermaidPromise) return _mermaidPromise;
+  _mermaidPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = MERMAID_CDN;
+    s.onload = () => {
+      try {
+        window.mermaid.initialize({
+          startOnLoad: false,
+          theme: "default",
+          flowchart: { htmlLabels: false, curve: "basis", useMaxWidth: false },
+          sequence:  { useMaxWidth: false },
+          gantt:     { useMaxWidth: false },
+          themeVariables: {
+            primaryColor:        "#" + C.primaryBlue,
+            primaryTextColor:    "#FFFFFF",
+            primaryBorderColor:  "#" + C.darkNavy,
+            secondaryColor:      "#" + C.orange,
+            tertiaryColor:       "#F2F7FB",
+            lineColor:           "#555555",
+            fontFamily:          "Arial, sans-serif",
+            fontSize:            "14px",
+          },
+        });
+        resolve(window.mermaid);
+      } catch (e) { reject(e); }
+    };
+    s.onerror = () => reject(new Error("Failed to load mermaid.js (offline?)"));
+    document.head.appendChild(s);
+  });
+  return _mermaidPromise;
+}
+
+async function svgToPng(svgString) {
+  // Read intrinsic SVG dimensions (prefer width/height, fall back to viewBox)
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, "image/svg+xml");
+  const svg = doc.documentElement;
+
+  let width  = parseFloat(svg.getAttribute("width"))  || 0;
+  let height = parseFloat(svg.getAttribute("height")) || 0;
+  if (!width || !height) {
+    const vb = svg.getAttribute("viewBox");
+    if (vb) {
+      const p = vb.split(/[\s,]+/).map(Number);
+      if (p.length >= 4) {
+        width  = width  || p[2];
+        height = height || p[3];
+      }
+    }
+  }
+  if (!width)  width  = 600;
+  if (!height) height = 400;
+
+  // Make sure SVG has explicit width/height for proper image loading
+  svg.setAttribute("width",  String(width));
+  svg.setAttribute("height", String(height));
+  const cleanSvg = new XMLSerializer().serializeToString(svg);
+
+  const blob = new Blob([cleanSvg], { type: "image/svg+xml;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    img.src = url;
+    try { await img.decode(); }
+    catch (_) {
+      await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; });
+    }
+
+    // 2x render for crisper diagrams when zoomed/printed
+    const scale  = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width  = Math.ceil(width  * scale);
+    canvas.height = Math.ceil(height * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const pngBlob = await new Promise(r => canvas.toBlob(r, "image/png"));
+    if (!pngBlob) throw new Error("canvas.toBlob returned null");
+    const ab = await pngBlob.arrayBuffer();
+    return { buffer: new Uint8Array(ab), width, height };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function renderMermaidToImage(source, idx) {
+  const m = await loadMermaid();
+  const renderId = "mermaid-" + idx + "-" + Date.now() + "-" + Math.floor(Math.random() * 1e6);
+  const { svg } = await m.render(renderId, source);
+  return await svgToPng(svg);
+}
+
+function renderMermaidImageParagraph(png, idx) {
+  // Cap display width to ~580px (a hair under the 624px content area at 96 DPI)
+  const MAX_W_PX = 580;
+  let dw = png.width, dh = png.height;
+  if (dw > MAX_W_PX) {
+    const s = MAX_W_PX / dw;
+    dw = MAX_W_PX;
+    dh = Math.round(png.height * s);
+  }
+  return [
+    new D.Paragraph({
+      alignment: D.AlignmentType.CENTER,
+      spacing: { before: 200, after: 60 },
+      children: [
+        new D.ImageRun({
+          type: "png",
+          data: png.buffer,
+          transformation: { width: dw, height: dh },
+          altText: { title: "Diagram " + idx, description: "Mermaid diagram " + idx, name: "diagram-" + idx },
+        }),
+      ],
+    }),
+    new D.Paragraph({
+      alignment: D.AlignmentType.CENTER,
+      spacing: { before: 0, after: 200 },
+      children: [
+        new D.TextRun({
+          text: "Figure " + idx,
+          font: "Arial", size: SZ.small,
+          italics: true, color: C.midGray,
+        }),
+      ],
+    }),
+  ];
+}
+
 // ---------- assembly ----------
-function buildChildren(md, coverTitle, coverSubtitle) {
+async function buildChildren(md, coverTitle, coverSubtitle, onStatus) {
   const tokens = marked.lexer(md, { gfm: true, breaks: false });
   const children = [];
 
@@ -23889,7 +24030,20 @@ function buildChildren(md, coverTitle, coverSubtitle) {
   }));
   if (coverTitle || coverSubtitle) children.push(renderHrPrimary());
 
+  let mermaidIdx = 0;
   for (const tok of tokens) {
+    if (tok.type === "code" && (tok.lang || "").toLowerCase() === "mermaid") {
+      mermaidIdx++;
+      if (onStatus) onStatus("Rendering diagram " + mermaidIdx + "\u2026");
+      try {
+        const png = await renderMermaidToImage(tok.text, mermaidIdx);
+        children.push(...renderMermaidImageParagraph(png, mermaidIdx));
+      } catch (e) {
+        console.warn("Mermaid render failed for diagram " + mermaidIdx + " \u2014 using placeholder:", e);
+        children.push(...renderMermaidPlaceholder(tok.text));
+      }
+      continue;
+    }
     switch (tok.type) {
       case "heading":    children.push(renderHeading(tok)); break;
       case "paragraph":  children.push(...renderParagraph(tok)); break;
@@ -23907,12 +24061,12 @@ function buildChildren(md, coverTitle, coverSubtitle) {
   return children;
 }
 
-function buildDocument(md, coverTitle, coverSubtitle, footerBrand) {
+async function buildDocument(md, coverTitle, coverSubtitle, footerBrand, onStatus) {
   // footerBrand is one of:
   //   { type: "logo", logo: { buffer, width, height } }
   //   { type: "url",  text: "innovationwithin.com", href: "https://innovationwithin.com" }
   //   { type: "none" } | null
-  const children = buildChildren(md, coverTitle, coverSubtitle);
+  const children = await buildChildren(md, coverTitle, coverSubtitle, onStatus);
 
   const headerLeft = coverTitle || "Document";
   const headerRight = coverSubtitle || "";
@@ -24071,7 +24225,7 @@ async function onConvert() {
     } else {
       footerBrand = { type: "none" };
     }
-    const doc = buildDocument(md, title, subtitle, footerBrand);
+    const doc = await buildDocument(md, title, subtitle, footerBrand, (msg) => setStatus(msg));
     const blob = await D.Packer.toBlob(doc);
     const name = (title || "document").trim().replace(/[^A-Za-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "") || "document";
     const url = URL.createObjectURL(blob);
@@ -24117,6 +24271,16 @@ The team identified three priorities:
 > Customers described the new onboarding as "dramatically easier" and reported being able to invite their team within minutes rather than days.
 
 ## Process notes
+
+\`\`\`mermaid
+flowchart TD
+    A[Discovery interview] --> B{Pain point<br/>identified?}
+    B -->|Yes| C[Add to backlog]
+    B -->|No| D[Continue exploration]
+    C --> E[Prioritize for sprint]
+    D --> A
+    E --> F[Ship & measure]
+\`\`\`
 
 \`\`\`bash
 # Example: how to run the analysis pipeline
